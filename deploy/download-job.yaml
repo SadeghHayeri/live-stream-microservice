@@ -1,31 +1,29 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: download-service-2
-  labels:
-    jobgroup: jobexample
+  name: download-service
 spec:
   template:
     metadata:
-      name: download-service-2
+      name: download-service
     spec:
-      nodeSelector:
-        kubernetes.io/hostname: 'bd2d9a'
       containers:
+
       - name: download-service
-        image: sadeghhayeri/livestream:download-service
+        image: sadeghhayeri/live-stream:download-service
         volumeMounts:
         - name: nfs
           mountPath: '/nfs'
         env:
         - name: URL
           value: 'https://test-vod.arvancloud.com/default_vod_channel/4k.mp4'
-        - name: OUT
-          value: '/nfs/video/input.mp4'
-      restartPolicy: Never
+        - name: OUTPUT
+          value: 'nfs/4k.mp4'
+
+      restartPolicy: OnFailure
       volumes:
       - name: nfs
         nfs:
-          server: 'IP'
+          server: '192.168.224.194'
           path: '/'
           readOnly: false
