@@ -1,8 +1,5 @@
 #!/bin/sh
-echo 'Download from' $URL
-echo 'Save to' $OUT
-
-wget -c $URL -O $OUT
+wget -c $URL -O $OUTPUT
 
 if [ $CALLBACK ]; then
     curl $CALLBACK

@@ -1,8 +1,8 @@
 FROM alpine:3.5
 
-RUN apk add wget
-RUN apk add curl
-RUN apk add nfs-utils
+RUN apk --no-cache add wget
+RUN apk --no-cache add curl
+RUN apk --no-cache add nfs-utils
 
 COPY ./run.sh /
 
