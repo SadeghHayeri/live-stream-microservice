@@ -9,70 +9,50 @@ spec:
     spec:
       containers:
 
+      - name: convert-service-4k
+        image: sadeghhayeri/live-stream:convert-service
+        volumeMounts:
+        - name: nfs
+          mountPath: '/nfs'
+        command: ['/bin/bash']
+        args: ['/to-hls.sh', '/nfs/input.mp4', '/nfs/video', '3840x2160 10000k 192k']
+
       - name: convert-service-1080p
         image: sadeghhayeri/live-stream:convert-service
         volumeMounts:
         - name: nfs
           mountPath: '/nfs'
-        command: ['/bin/sh']
-        args: ['/run.sh']
-        env:
-        - name: QUALITY
-          value: 1080p
-        - name: INPUT
-          value: '/nfs/4k.mp4'
-        - name: OUTPUT
-          value: '/nfs/1080.mp4'
+        command: ['/bin/bash']
+        args: ['/to-hls.sh', '/nfs/input.mp4', '/nfs/video', '1920x1080 5000k 192k']
 
       - name: convert-service-720p
         image: sadeghhayeri/live-stream:convert-service
         volumeMounts:
         - name: nfs
           mountPath: '/nfs'
-        command: ['/bin/sh']
-        args: ['/run.sh']
-        env:
-        - name: QUALITY
-          value: 720p
-        - name: INPUT
-          value: '/nfs/4k.mp4'
-        - name: OUTPUT
-          value: '/nfs/720.mp4'
+        command: ['/bin/bash']
+        args: ['/to-hls.sh', '/nfs/input.mp4', '/nfs/video', '1280x720 2800k 128k']
 
       - name: convert-service-480p
         image: sadeghhayeri/live-stream:convert-service
         volumeMounts:
         - name: nfs
           mountPath: '/nfs'
-        command: ['/bin/sh']
-        args: ['/run.sh']
-        env:
-        - name: QUALITY
-          value: 480p
-        - name: INPUT
-          value: '/nfs/4k.mp4'
-        - name: OUTPUT
-          value: '/nfs/480.mp4'
+        command: ['/bin/bash']
+        args: ['/to-hls.sh', '/nfs/input.mp4', '/nfs/video', '842x480 1400k 128k']
 
       - name: convert-service-320p
         image: sadeghhayeri/live-stream:convert-service
         volumeMounts:
         - name: nfs
           mountPath: '/nfs'
-        command: ['/bin/sh']
-        args: ['/run.sh']
-        env:
-        - name: QUALITY
-          value: 320p
-        - name: INPUT
-          value: '/nfs/4k.mp4'
-        - name: OUTPUT
-          value: '/nfs/320.mp4'
+        command: ['/bin/bash']
+        args: ['/to-hls.sh', '/nfs/input.mp4', '/nfs/video', '640x360 800k 96k']
 
       restartPolicy: Never
       volumes:
       - name: nfs
         nfs:
-          server: '172.17.0.5'
+          server: '10.108.176.135'
           path: '/'
           readOnly: false

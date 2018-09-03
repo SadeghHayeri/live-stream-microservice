@@ -1,4 +1,6 @@
 FROM jrottenberg/ffmpeg
 
-COPY ./run.sh /
-CMD 'chmod +x /run.sh'
+RUN apt install bc
+
+COPY ./to-hls.sh /
+CMD 'chmod +x /to-hls.sh'
