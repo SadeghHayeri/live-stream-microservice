@@ -1,0 +1,78 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: convert-service
+spec:
+  template:
+    metadata:
+      name: convert-service
+    spec:
+      containers:
+
+      - name: convert-service-1080p
+        image: sadeghhayeri/live-stream:convert-service
+        volumeMounts:
+        - name: nfs
+          mountPath: '/nfs'
+        command: ['/bin/sh']
+        args: ['/run.sh']
+        env:
+        - name: QUALITY
+          value: 1080p
+        - name: INPUT
+          value: '/nfs/4k.mp4'
+        - name: OUTPUT
+          value: '/nfs/1080.mp4'
+
+      - name: convert-service-720p
+        image: sadeghhayeri/live-stream:convert-service
+        volumeMounts:
+        - name: nfs
+          mountPath: '/nfs'
+        command: ['/bin/sh']
+        args: ['/run.sh']
+        env:
+        - name: QUALITY
+          value: 720p
+        - name: INPUT
+          value: '/nfs/4k.mp4'
+        - name: OUTPUT
+          value: '/nfs/720.mp4'
+
+      - name: convert-service-480p
+        image: sadeghhayeri/live-stream:convert-service
+        volumeMounts:
+        - name: nfs
+          mountPath: '/nfs'
+        command: ['/bin/sh']
+        args: ['/run.sh']
+        env:
+        - name: QUALITY
+          value: 480p
+        - name: INPUT
+          value: '/nfs/4k.mp4'
+        - name: OUTPUT
+          value: '/nfs/480.mp4'
+
+      - name: convert-service-320p
+        image: sadeghhayeri/live-stream:convert-service
+        volumeMounts:
+        - name: nfs
+          mountPath: '/nfs'
+        command: ['/bin/sh']
+        args: ['/run.sh']
+        env:
+        - name: QUALITY
+          value: 320p
+        - name: INPUT
+          value: '/nfs/4k.mp4'
+        - name: OUTPUT
+          value: '/nfs/320.mp4'
+
+      restartPolicy: Never
+      volumes:
+      - name: nfs
+        nfs:
+          server: '172.17.0.5'
+          path: '/'
+          readOnly: false
