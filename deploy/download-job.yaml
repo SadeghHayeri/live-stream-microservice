@@ -18,7 +18,7 @@ spec:
         - name: URL
           value: 'https://test-vod.arvancloud.com/default_vod_channel/4k.mp4'
         - name: OUTPUT
-          value: 'nfs/4k.mp4'
+          value: 'nfs/input.mp4'
 
       restartPolicy: OnFailure
       volumes:
