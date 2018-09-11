@@ -1,58 +1,44 @@
-# from https://hub.docker.com/r/tiangolo/nginx-rtmp/~/dockerfile/
-FROM buildpack-deps:stretch
+FROM alpine:3.8 as build
 
-LABEL maintainer="Sebastian Ramirez <tiangolo@gmail.com>"
+RUN apk add --no-cache curl build-base openssl openssl-dev zlib-dev linux-headers pcre-dev luajit luajit-dev ffmpeg ffmpeg-dev libjpeg-turbo libjpeg-turbo-dev
+RUN mkdir nginx nginx-vod-module nginx-lua-module ngx_devel_kit nginx-rtmp-module nginx-thumb-module
 
-# Versions of Nginx and nginx-rtmp-module to use
-ENV NGINX_VERSION nginx-1.15.0
-ENV NGINX_RTMP_MODULE_VERSION 1.2.1
+ENV NGINX_VERSION 1.14.0
+ENV VOD_MODULE_VERSION 1.23
+ENV LUA_MODULE_VERSION v0.10.13
+ENV DEV_MODULE_VERSION v0.3.0
+ENV RTMP_MODULE_VERSION v1.2.1
+ENV THUMB_MODULE_VERSION 0.9.0
 
-# Install dependencies
-RUN apt-get update && \
-    apt-get install -y ca-certificates openssl libssl-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN curl -sL https://nginx.org/download/nginx-${NGINX_VERSION}.tar.gz | tar -C nginx --strip 1 -xz
+RUN curl -sL https://github.com/kaltura/nginx-vod-module/archive/${VOD_MODULE_VERSION}.tar.gz | tar -C nginx-vod-module --strip 1 -xz
+RUN curl -sL https://github.com/openresty/lua-nginx-module/archive/${LUA_MODULE_VERSION}.tar.gz | tar -C nginx-lua-module --strip 1 -xz
+RUN curl -sL https://github.com/simpl/ngx_devel_kit/archive/${DEV_MODULE_VERSION}.tar.gz | tar -C ngx_devel_kit --strip 1 -xz
+RUN curl -sL https://github.com/arut/nginx-rtmp-module/archive/${RTMP_MODULE_VERSION}.tar.gz | tar -C nginx-rtmp-module --strip 1 -xz
+RUN curl -sL https://github.com/wandenberg/nginx-video-thumbextractor-module/archive/${THUMB_MODULE_VERSION}.tar.gz | tar -C nginx-thumb-module --strip 1 -xz
 
-# Download and decompress Nginx
-RUN mkdir -p /tmp/build/nginx && \
-    cd /tmp/build/nginx && \
-    wget -O ${NGINX_VERSION}.tar.gz https://nginx.org/download/${NGINX_VERSION}.tar.gz && \
-    tar -zxf ${NGINX_VERSION}.tar.gz
+ENV LUAJIT_INC /usr/include/luajit-2.1/
+ENV LUAJIT_LIB /usr/lib
 
-# Download and decompress RTMP module
-RUN mkdir -p /tmp/build/nginx-rtmp-module && \
-    cd /tmp/build/nginx-rtmp-module && \
-    wget -O nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION}.tar.gz https://github.com/arut/nginx-rtmp-module/archive/v${NGINX_RTMP_MODULE_VERSION}.tar.gz && \
-    tar -zxf nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION}.tar.gz && \
-    cd nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION}
+WORKDIR nginx
+RUN ./configure --prefix=/usr/local/nginx \
+	--with-ld-opt="-Wl,-rpath,/usr/lib/libluajit-5.1.so" \
+	--add-module=../nginx-vod-module \
+	--add-module=../ngx_devel_kit \
+	--add-module=../nginx-lua-module \
+	--add-module=../nginx-thumb-module \
+	--add-module=../nginx-rtmp-module \
+	--with-file-aio \
+	--with-threads \
+	--with-cc-opt="-O3"
+RUN make
+RUN make install
 
-# Build and install Nginx
-# The default puts everything under /usr/local/nginx, so it's needed to change
-# it explicitly. Not just for order but to have it in the PATH
-RUN cd /tmp/build/nginx/${NGINX_VERSION} && \
-    ./configure \
-        --sbin-path=/usr/local/sbin/nginx \
-        --conf-path=/etc/nginx/nginx.conf \
-        --error-log-path=/var/log/nginx/error.log \
-        --pid-path=/var/run/nginx/nginx.pid \
-        --lock-path=/var/lock/nginx/nginx.lock \
-        --http-log-path=/var/log/nginx/access.log \
-        --http-client-body-temp-path=/tmp/nginx-client-body \
-        --with-http_ssl_module \
-        --with-threads \
-        --with-ipv6 \
-        --add-module=/tmp/build/nginx-rtmp-module/nginx-rtmp-module-${NGINX_RTMP_MODULE_VERSION} && \
-    make -j $(getconf _NPROCESSORS_ONLN) && \
-    make install && \
-    mkdir /var/lock/nginx && \
-    rm -rf /tmp/build
-
-# Forward logs to Docker
-RUN ln -sf /dev/stdout /var/log/nginx/access.log && \
-    ln -sf /dev/stderr /var/log/nginx/error.log
-
-# Set up config file
-COPY nginx.conf /etc/nginx/nginx.conf
+FROM alpine:3.8
+RUN apk add --no-cache ca-certificates openssl pcre zlib luajit ffmpeg libjpeg-turbo
+COPY --from=build /usr/local/nginx /usr/local/nginx
+COPY nginx.conf /usr/local/nginx/conf/nginx.conf
 COPY player.html /www/index.html
-
-EXPOSE 1935
-CMD ["nginx", "-g", "daemon off;"]
+RUN rm -rf /usr/local/nginx/html /usr/loca/nginx/conf/*.default
+ENTRYPOINT ["/usr/local/nginx/sbin/nginx"]
+CMD ["-g", "daemon off;"]
